@@ -1,0 +1,94 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title?: string;
+  activeSection?: string;
+}
+const { title, activeSection = 'dashboard' } = Astro.props;
+const user = Astro.locals.user;
+---
+<BaseLayout title={title}>
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 shrink-0 bg-slate-900 flex flex-col h-full">
+
+      <!-- Logo -->
+      <div class="h-16 flex items-center px-5 border-b border-slate-700/60">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center shadow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="font-bold text-white tracking-tight text-lg">SILO</span>
+        </div>
+      </div>
+
+      <!-- Nav -->
+      <nav class="flex-1 py-4 px-3">
+        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-2">Menu</p>
+
+        <a href="/dashboard"
+          class={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-1 ${
+            activeSection === 'dashboard'
+              ? 'bg-violet-600 text-white'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <!-- LayoutDashboard icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          Dashboard
+        </a>
+
+        <a href="/dashboard/keywords"
+          class={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            activeSection === 'keywords'
+              ? 'bg-violet-600 text-white'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <!-- Tag icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+          Keywords
+        </a>
+      </nav>
+
+      <!-- User + logout -->
+      <div class="p-3 border-t border-slate-700/60">
+        <div class="flex items-center gap-3 px-3 py-2 mb-1">
+          <div class="w-7 h-7 rounded-full bg-violet-900 flex items-center justify-center shrink-0">
+            <span class="text-xs font-bold text-violet-300 uppercase">{user?.username?.[0] ?? 'U'}</span>
+          </div>
+          <span class="text-sm text-slate-300 font-medium truncate">{user?.username}</span>
+        </div>
+        <form method="POST" action="/api/auth/logout">
+          <button type="submit"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-950/40 transition-colors text-sm font-medium">
+            <!-- LogOut icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sair
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 overflow-auto bg-slate-50">
+      <slot />
+    </main>
+  </div>
+</BaseLayout>

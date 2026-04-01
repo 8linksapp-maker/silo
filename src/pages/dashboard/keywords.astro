@@ -1,0 +1,72 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { getKeywordsByUser, getSilosByUser } from '../../lib/db';
+
+const { userId } = Astro.locals.user;
+const keywords = getKeywordsByUser(userId);
+const silos    = getSilosByUser(userId);
+
+const siloMap = Object.fromEntries(silos.map(s => [s.id, s.name]));
+---
+<DashboardLayout title="Keywords — SILO" activeSection="keywords">
+  <div class="p-8">
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-admin-text">Todas as Keywords</h1>
+      <p class="text-admin-text-muted text-sm mt-1">{keywords.length} keywords cadastradas</p>
+    </div>
+
+    <div class="bg-admin-surface border border-admin-border rounded-admin-lg overflow-hidden">
+      {keywords.length === 0 ? (
+        <div class="py-16 text-center text-admin-text-muted">
+          <p class="text-lg font-medium mb-2">Nenhuma keyword ainda</p>
+          <p class="text-sm">Acesse o Dashboard para adicionar keywords.</p>
+        </div>
+      ) : (
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b border-admin-border">
+            <tr>
+              <th class="text-left px-4 py-3 font-semibold text-admin-text-muted text-xs uppercase tracking-wider">Keyword</th>
+              <th class="text-left px-4 py-3 font-semibold text-admin-text-muted text-xs uppercase tracking-wider">Tipo</th>
+              <th class="text-left px-4 py-3 font-semibold text-admin-text-muted text-xs uppercase tracking-wider">SILO</th>
+              <th class="text-left px-4 py-3 font-semibold text-admin-text-muted text-xs uppercase tracking-wider">Volume</th>
+              <th class="text-left px-4 py-3 font-semibold text-admin-text-muted text-xs uppercase tracking-wider">Dificuldade</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-admin-border">
+            {keywords.map(kw => (
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 font-medium text-admin-text">{kw.text}</td>
+                <td class="px-4 py-3">
+                  <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    kw.type === 'primary'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-violet-100 text-violet-700'
+                  }`}>
+                    {kw.type === 'primary' ? 'Principal' : 'Secundária'}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-admin-text-muted">
+                  {kw.silo_id ? siloMap[kw.silo_id] ?? '—' : <span class="text-slate-400 italic">Pool</span>}
+                </td>
+                <td class="px-4 py-3 text-admin-text-muted">{kw.search_volume > 0 ? kw.search_volume.toLocaleString() : '—'}</td>
+                <td class="px-4 py-3">
+                  {kw.difficulty > 0 ? (
+                    <div class="flex items-center gap-2">
+                      <div class="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          class={`h-full rounded-full ${kw.difficulty < 30 ? 'bg-green-500' : kw.difficulty < 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={`width: ${kw.difficulty}%`}
+                        />
+                      </div>
+                      <span class="text-xs text-admin-text-muted">{kw.difficulty}</span>
+                    </div>
+                  ) : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  </div>
+</DashboardLayout>

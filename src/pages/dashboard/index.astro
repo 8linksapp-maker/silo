@@ -1,0 +1,17 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import SiloBoard from '../../components/SiloBoard';
+import { getSilosByUser, getKeywordsByUser } from '../../lib/db';
+
+const { userId, username } = Astro.locals.user;
+const silos    = getSilosByUser(userId);
+const keywords = getKeywordsByUser(userId);
+---
+<DashboardLayout title="Dashboard — SILO" activeSection="dashboard">
+  <SiloBoard
+    initialSilos={silos}
+    initialKeywords={keywords}
+    username={username}
+    client:load
+  />
+</DashboardLayout>

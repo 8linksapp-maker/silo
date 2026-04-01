@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LoginForm from '../components/LoginForm';
+
+// If already logged in, redirect to dashboard
+const token = Astro.cookies.get('auth_token')?.value;
+if (token) {
+  const { verifyToken } = await import('../lib/auth');
+  const payload = await verifyToken(token);
+  if (payload) return Astro.redirect('/dashboard');
+}
+---
+<BaseLayout title="Login — SILO">
+  <div class="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+    <div class="w-full max-w-sm">
+      <!-- Logo -->
+      <div class="flex flex-col items-center mb-8">
+        <div class="w-12 h-12 bg-admin-primary rounded-admin-lg flex items-center justify-center mb-4 shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-white">SILO</h1>
+        <p class="text-slate-400 text-sm mt-1">Organize suas keywords</p>
+      </div>
+
+      <!-- Card -->
+      <div class="bg-admin-surface rounded-admin-xl shadow-2xl p-8 border border-slate-700/30">
+        <h2 class="text-lg font-semibold text-admin-text mb-6">Entrar na conta</h2>
+        <LoginForm client:load />
+        <p class="text-center text-xs text-slate-400 mt-6">
+          Login padrão: <span class="font-mono text-slate-300">admin / admin123</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
