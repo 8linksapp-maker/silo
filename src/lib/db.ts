@@ -25,6 +25,7 @@ export interface Keyword {
   search_volume: number;
   difficulty: number;
   type: 'primary' | 'secondary';
+  status: 'pendente' | 'feito';
   silo_id: number | null;
   user_id: number;
   position: number;
@@ -70,12 +71,18 @@ function getDb(): Database.Database {
       search_volume INTEGER DEFAULT 0,
       difficulty    INTEGER DEFAULT 0,
       type          TEXT    CHECK(type IN ('primary','secondary')) DEFAULT 'secondary',
+      status        TEXT    CHECK(status IN ('pendente','feito')) DEFAULT 'pendente',
       silo_id       INTEGER REFERENCES silos(id) ON DELETE SET NULL,
       user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       position      INTEGER DEFAULT 0,
       created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Migration: add status column to existing databases
+  try {
+    db.exec(`ALTER TABLE keywords ADD COLUMN status TEXT CHECK(status IN ('pendente','feito')) DEFAULT 'pendente'`);
+  } catch { /* column already exists */ }
 
   // Seed default admin on first run
   const count = (db.prepare('SELECT COUNT(*) AS c FROM users').get() as { c: number }).c;

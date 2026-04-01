@@ -22,6 +22,7 @@ interface Keyword {
   id: number;
   text: string;
   type: 'primary' | 'secondary';
+  status: 'pendente' | 'feito';
   silo_id: number | null;
   search_volume: number;
   difficulty: number;
@@ -105,24 +106,44 @@ interface CardProps {
   onDelete: (id: number) => void;
   onToggleType: (id: number) => void;
   onRemoveFromSilo: (id: number) => void;
+  onToggleStatus: (id: number) => void;
 }
 
-function KeywordCard({ kw, inSilo, isOverlay, onDelete, onToggleType, onRemoveFromSilo }: CardProps) {
+function KeywordCard({ kw, inSilo, isOverlay, onDelete, onToggleType, onRemoveFromSilo, onToggleStatus }: CardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: kw.id });
   const style = { transform: CSS.Translate.toString(transform) };
+  const done = kw.status === 'feito';
 
   return (
     <div
       ref={setNodeRef} style={isOverlay ? undefined : style}
       className={cn(
-        'group flex items-start gap-2 bg-white border rounded-lg px-2.5 py-2 text-sm select-none',
-        kw.type === 'primary'
-          ? 'border-blue-200 ring-1 ring-blue-100'
-          : 'border-slate-200',
+        'group flex items-start gap-2 border rounded-lg px-2.5 py-2 text-sm select-none transition-colors',
+        done
+          ? 'bg-green-50 border-green-200'
+          : kw.type === 'primary'
+            ? 'bg-white border-blue-200 ring-1 ring-blue-100'
+            : 'bg-white border-slate-200',
         isDragging && 'opacity-30',
         isOverlay && 'shadow-xl rotate-1 opacity-95',
       )}
     >
+      {/* Status toggle — sempre visível */}
+      {!isOverlay && (
+        <button
+          onClick={() => onToggleStatus(kw.id)}
+          title={done ? 'Marcar como pendente' : 'Marcar como feito'}
+          className={cn(
+            'mt-0.5 shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors',
+            done
+              ? 'border-green-500 bg-green-500 text-white'
+              : 'border-slate-300 hover:border-green-400',
+          )}
+        >
+          {done && <Check className="w-2.5 h-2.5" />}
+        </button>
+      )}
+
       {/* Drag handle */}
       <button
         {...attributes} {...listeners}
@@ -134,10 +155,17 @@ function KeywordCard({ kw, inSilo, isOverlay, onDelete, onToggleType, onRemoveFr
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="font-medium text-slate-800 truncate">{kw.text}</span>
+          <span className={cn('font-medium truncate', done ? 'text-green-700 line-through decoration-green-400' : 'text-slate-800')}>
+            {kw.text}
+          </span>
           {kw.type === 'primary' && (
             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 shrink-0">
               <Star className="w-2.5 h-2.5" /> PRINCIPAL
+            </span>
+          )}
+          {done && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 shrink-0">
+              FEITO
             </span>
           )}
         </div>
@@ -157,7 +185,7 @@ function KeywordCard({ kw, inSilo, isOverlay, onDelete, onToggleType, onRemoveFr
         )}
       </div>
 
-      {/* Actions */}
+      {/* Actions on hover */}
       {!isOverlay && (
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           {inSilo && (
@@ -184,9 +212,11 @@ function KeywordCard({ kw, inSilo, isOverlay, onDelete, onToggleType, onRemoveFr
 
 // ── PrimarySlot ─────────────────────────────────────────────────────────────
 
+type CardHandlers = Omit<CardProps, 'kw' | 'inSilo' | 'isOverlay'>;
+
 function PrimarySlot({ siloId, kw, ...handlers }: {
   siloId: number; kw?: Keyword;
-} & Omit<CardProps, 'kw' | 'inSilo'>) {
+} & CardHandlers) {
   const { setNodeRef, isOver } = useDroppable({ id: `pri-${siloId}` });
 
   return (
@@ -212,7 +242,7 @@ function PrimarySlot({ siloId, kw, ...handlers }: {
 
 function SecondaryArea({ siloId, kws, ...handlers }: {
   siloId: number; kws: Keyword[];
-} & Omit<CardProps, 'kw' | 'inSilo'>) {
+} & CardHandlers) {
   const { setNodeRef, isOver } = useDroppable({ id: `sec-${siloId}` });
 
   return (
@@ -244,9 +274,10 @@ interface ColProps {
   onDeleteKw: (id: number) => void;
   onToggleType: (id: number) => void;
   onRemoveFromSilo: (id: number) => void;
+  onToggleStatus: (id: number) => void;
 }
 
-function SiloColumn({ silo, kws, onDeleteSilo, onRenameSilo, onDeleteKw, onToggleType, onRemoveFromSilo }: ColProps) {
+function SiloColumn({ silo, kws, onDeleteSilo, onRenameSilo, onDeleteKw, onToggleType, onRemoveFromSilo, onToggleStatus }: ColProps) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(silo.name);
 
@@ -260,7 +291,7 @@ function SiloColumn({ silo, kws, onDeleteSilo, onRenameSilo, onDeleteKw, onToggl
   const { s } = score(kws);
   const primaryKw = kws.find(k => k.type === 'primary');
   const secondaryKws = kws.filter(k => k.type === 'secondary');
-  const cardHandlers = { onDelete: onDeleteKw, onToggleType, onRemoveFromSilo };
+  const cardHandlers = { onDelete: onDeleteKw, onToggleType, onRemoveFromSilo, onToggleStatus };
 
   return (
     <div className="w-72 shrink-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
@@ -321,11 +352,12 @@ function SiloColumn({ silo, kws, onDeleteSilo, onRenameSilo, onDeleteKw, onToggl
 
 // ── KeywordPool ──────────────────────────────────────────────────────────────
 
-function KeywordPool({ kws, onDelete, onToggleType, onRemoveFromSilo }: {
+function KeywordPool({ kws, onDelete, onToggleType, onRemoveFromSilo, onToggleStatus }: {
   kws: Keyword[];
   onDelete: (id: number) => void;
   onToggleType: (id: number) => void;
   onRemoveFromSilo: (id: number) => void;
+  onToggleStatus: (id: number) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: 'pool' });
 
@@ -356,7 +388,7 @@ function KeywordPool({ kws, onDelete, onToggleType, onRemoveFromSilo }: {
           ) : (
             <div className="flex flex-wrap gap-2">
               {kws.map(k => (
-                <KeywordCard key={k.id} kw={k} onDelete={onDelete} onToggleType={onToggleType} onRemoveFromSilo={onRemoveFromSilo} />
+                <KeywordCard key={k.id} kw={k} onDelete={onDelete} onToggleType={onToggleType} onRemoveFromSilo={onRemoveFromSilo} onToggleStatus={onToggleStatus} />
               ))}
             </div>
           )}
@@ -806,6 +838,13 @@ export default function SiloBoard({ initialSilos, initialKeywords }: Props) {
     await applyKwPatch(id, { silo_id: null });
   }
 
+  async function handleToggleStatus(id: number) {
+    const kw = keywords.find(k => k.id === id);
+    if (!kw) return;
+    const newStatus = kw.status === 'feito' ? 'pendente' : 'feito';
+    await applyKwPatch(id, { status: newStatus });
+  }
+
   async function handleAddKeyword(text: string, type: 'primary' | 'secondary', vol: number, diff: number) {
     const data = await api('/api/keywords', 'POST', { text, type, silo_id: null, search_volume: vol, difficulty: diff });
     if (data.id) {
@@ -885,7 +924,7 @@ export default function SiloBoard({ initialSilos, initialKeywords }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keywords]);
 
-  const cardHandlers = { onDelete: handleDeleteKw, onToggleType: handleToggleType, onRemoveFromSilo: handleRemoveFromSilo };
+  const cardHandlers = { onDelete: handleDeleteKw, onToggleType: handleToggleType, onRemoveFromSilo: handleRemoveFromSilo, onToggleStatus: handleToggleStatus };
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -899,6 +938,9 @@ export default function SiloBoard({ initialSilos, initialKeywords }: Props) {
             <h1 className="text-xl font-bold text-slate-800">Meus SILOs</h1>
             <p className="text-xs text-slate-400 mt-0.5">
               {silos.length} silo{silos.length !== 1 ? 's' : ''} · {keywords.length} keyword{keywords.length !== 1 ? 's' : ''} · Score médio: <span className="font-semibold text-violet-600">{avgScore}</span>
+              {keywords.length > 0 && (
+                <> · <span className="font-semibold text-green-600">{keywords.filter(k => k.status === 'feito').length}</span>/{keywords.length} artigos feitos</>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2 ml-auto">
@@ -940,7 +982,10 @@ export default function SiloBoard({ initialSilos, initialKeywords }: Props) {
                   kws={kwsBySilo[silo.id] ?? []}
                   onDeleteSilo={handleDeleteSilo}
                   onRenameSilo={handleRenameSilo}
-                  {...cardHandlers}
+                  onDeleteKw={handleDeleteKw}
+                  onToggleType={handleToggleType}
+                  onRemoveFromSilo={handleRemoveFromSilo}
+                  onToggleStatus={handleToggleStatus}
                 />
               ))
             )}
@@ -948,7 +993,7 @@ export default function SiloBoard({ initialSilos, initialKeywords }: Props) {
         </div>
 
         {/* Keyword pool */}
-        <KeywordPool kws={poolKws} {...cardHandlers} />
+        <KeywordPool kws={poolKws} onDelete={handleDeleteKw} onToggleType={handleToggleType} onRemoveFromSilo={handleRemoveFromSilo} onToggleStatus={handleToggleStatus} />
       </div>
 
       {/* DnD overlay */}
